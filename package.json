@@ -1,6 +1,6 @@
 {
   "name": "exsorted-react",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "React hooks for sorting with Exsorted and TypeScript-first inference",
   "keywords": [
     "custom-hook",
