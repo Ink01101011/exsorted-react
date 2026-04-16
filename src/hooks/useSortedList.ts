@@ -191,8 +191,4 @@ export function useSortedList<TItem, const TAccessors extends SortAccessorRecord
   };
 }
 
-/**
- * Minimal helper for building required accessors in single-key scenarios.
- */
-export { singleKeyAccessors } from "../utils";
 export type { UseSortedListOptions };

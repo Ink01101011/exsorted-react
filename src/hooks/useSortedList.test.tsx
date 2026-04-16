@@ -1,7 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "@jest/globals";
 
-import { singleKeyAccessors, useSortedList } from "./useSortedList";
+import { singleKeyAccessors } from "../utils/useSortedList.utils";
+import { useSortedList } from "./useSortedList";
 import { useSortState } from "./useSortState";
 
 type Product = {
