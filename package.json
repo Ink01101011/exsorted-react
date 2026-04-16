@@ -49,7 +49,7 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "size": "node ./scripts/check-bundle-size.mjs",
-    "audit:cve": "pnpm audit --audit-level=high",
+    "audit:cve": "pnpm dlx audit-ci@latest --high --package-manager pnpm",
     "check": "pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run build && pnpm run size",
     "prepare": "husky",
     "precommit:check": "pnpm run lint && pnpm run format:check && pnpm run typecheck",
