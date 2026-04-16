@@ -1,7 +1,7 @@
 export {
   areArraysShallowEqual,
   resolveDefaultKey,
-  resolveAccessorOrThrow,
+  resolveAccessorWithFallback,
   resolveExternalController,
   resolveExternalState,
   singleKeyAccessors,

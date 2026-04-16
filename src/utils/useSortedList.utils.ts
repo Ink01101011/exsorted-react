@@ -135,19 +135,21 @@ export const resolveStandaloneInitialKey = <TItem, TAccessors extends SortAccess
 };
 
 /**
- * Resolves accessor for the active key and fails fast when key is missing.
+ * Resolves accessor for active key with fallback to default key.
+ *
+ * This avoids repeated render errors when external state provides an unknown key.
  */
-export const resolveAccessorOrThrow = <TItem, TKey extends string>(
+export const resolveAccessorWithFallback = <TItem, TKey extends string>(
   accessors: Record<TKey, (item: TItem) => SortPrimitive>,
   key: TKey,
-): ((item: TItem) => SortPrimitive) => {
-  const accessor = accessors[key];
-
-  if (accessor === undefined) {
-    throw new Error(`useSortedList could not find accessor for key: ${String(key)}`);
+  fallbackKey: TKey,
+): { accessor: (item: TItem) => SortPrimitive; resolvedKey: TKey } => {
+  const directAccessor = accessors[key];
+  if (directAccessor !== undefined) {
+    return { accessor: directAccessor, resolvedKey: key };
   }
 
-  return accessor;
+  return { accessor: accessors[fallbackKey], resolvedKey: fallbackKey };
 };
 
 /**

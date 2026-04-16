@@ -1,3 +1,5 @@
+"use client";
+
 import {
   useCallback,
   useDeferredValue,
@@ -10,7 +12,7 @@ import {
 import { useSortState } from "./useSortState";
 import {
   areArraysShallowEqual,
-  resolveAccessorOrThrow,
+  resolveAccessorWithFallback,
   resolveDefaultKey,
   resolveExternalController,
   resolveExternalState,
@@ -120,12 +122,17 @@ export function useSortedList<TItem, const TAccessors extends SortAccessorRecord
   const effectiveItems = deferredItems;
   const effectiveState = deferredState;
   const effectiveComparator = comparator ?? comparators;
-
-  const accessor = resolveAccessorOrThrow(accessors, effectiveState.key);
+  const { accessor, resolvedKey } = resolveAccessorWithFallback(
+    accessors,
+    effectiveState.key,
+    defaultKey,
+  );
+  const effectiveSort =
+    resolvedKey === effectiveState.key ? effectiveState : { ...effectiveState, key: resolvedKey };
 
   const nextSorted = useMemo(
-    () => sortList(effectiveItems, effectiveState, accessor, effectiveComparator, sorter),
-    [accessor, effectiveComparator, effectiveItems, effectiveState, sorter],
+    () => sortList(effectiveItems, effectiveSort, accessor, effectiveComparator, sorter),
+    [accessor, effectiveComparator, effectiveItems, effectiveSort, sorter],
   );
 
   const [sorted, setSorted] = useState<TItem[]>(nextSorted);

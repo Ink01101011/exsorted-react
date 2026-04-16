@@ -29,6 +29,19 @@ const sorted = useSortedList(products, {
 const result = useSortedList(items, options);
 ```
 
+### Next.js SSR / RSC
+
+This package is client-hook based. In Next.js App Router, call `useSortedList` only in Client Components.
+
+```tsx
+"use client";
+
+import { useSortedList } from "exsorted-react";
+```
+
+If external read-only state provides a key that is not present in `accessors`, the hook safely falls
+back to the first accessor key to avoid error-triggered re-render loops.
+
 ### Modes
 
 - Standalone mode: pass accessors with optional initialKey and initialDirection

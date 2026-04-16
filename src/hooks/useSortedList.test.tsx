@@ -133,16 +133,18 @@ describe("useSortedList", () => {
     });
   });
 
-  it("throws when external state key has no accessor", () => {
-    expect(() => {
-      renderHook(() =>
-        useSortedList(products, {
-          accessors: {
-            price: (item: Product) => item.price,
-          },
-          state: { key: "name" as never, direction: "asc" },
-        }),
-      );
-    }).toThrow("useSortedList could not find accessor for key: name");
+  it("falls back to default accessor when external state key is missing", async () => {
+    const { result } = renderHook(() =>
+      useSortedList(products, {
+        accessors: {
+          price: (item: Product) => item.price,
+        },
+        state: { key: "name" as never, direction: "asc" },
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.items.map((item) => item.price)).toEqual([10, 20, 30]);
+    });
   });
 });
