@@ -132,4 +132,17 @@ describe("useSortedList", () => {
       expect(result.current.sortKey).toBe("price");
     });
   });
+
+  it("throws when external state key has no accessor", () => {
+    expect(() => {
+      renderHook(() =>
+        useSortedList(products, {
+          accessors: {
+            price: (item: Product) => item.price,
+          },
+          state: { key: "name" as never, direction: "asc" },
+        }),
+      );
+    }).toThrow("useSortedList could not find accessor for key: name");
+  });
 });

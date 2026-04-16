@@ -135,6 +135,22 @@ export const resolveStandaloneInitialKey = <TItem, TAccessors extends SortAccess
 };
 
 /**
+ * Resolves accessor for the active key and fails fast when key is missing.
+ */
+export const resolveAccessorOrThrow = <TItem, TKey extends string>(
+  accessors: Record<TKey, (item: TItem) => SortPrimitive>,
+  key: TKey,
+): ((item: TItem) => SortPrimitive) => {
+  const accessor = accessors[key];
+
+  if (accessor === undefined) {
+    throw new Error(`useSortedList could not find accessor for key: ${String(key)}`);
+  }
+
+  return accessor;
+};
+
+/**
  * Reads external controller when hook is used in controlled mode.
  */
 export const resolveExternalController = <TItem, TAccessors extends SortAccessorRecord<TItem>>(

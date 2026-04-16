@@ -10,6 +10,7 @@ import {
 import { useSortState } from "./useSortState";
 import {
   areArraysShallowEqual,
+  resolveAccessorOrThrow,
   resolveDefaultKey,
   resolveExternalController,
   resolveExternalState,
@@ -120,7 +121,7 @@ export function useSortedList<TItem, const TAccessors extends SortAccessorRecord
   const effectiveState = deferredState;
   const effectiveComparator = comparator ?? comparators;
 
-  const accessor = accessors[effectiveState.key];
+  const accessor = resolveAccessorOrThrow(accessors, effectiveState.key);
 
   const nextSorted = useMemo(
     () => sortList(effectiveItems, effectiveState, accessor, effectiveComparator, sorter),
@@ -140,6 +141,10 @@ export function useSortedList<TItem, const TAccessors extends SortAccessorRecord
   }, []);
 
   useEffect(() => {
+    if (areArraysShallowEqual(sorted, nextSorted)) {
+      return;
+    }
+
     startTransition(() => {
       setSorted((current) => {
         if (areArraysShallowEqual(current, nextSorted)) {
@@ -150,7 +155,7 @@ export function useSortedList<TItem, const TAccessors extends SortAccessorRecord
         return nextSorted;
       });
     });
-  }, [nextSorted, startTransition]);
+  }, [nextSorted, sorted, startTransition]);
 
   const visibleItems = resolveVisibleItems({
     isOriginalMode,
