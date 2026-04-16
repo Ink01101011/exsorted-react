@@ -17,6 +17,31 @@ const products: Product[] = [
 ];
 
 describe("useSortedList", () => {
+  it("supports standalone mode without useSortState", async () => {
+    const { result } = renderHook(() =>
+      useSortedList(products, {
+        accessors: {
+          name: (item: Product) => item.name,
+          price: (item: Product) => item.price,
+        },
+        initialKey: "price",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.items.map((item) => item.price)).toEqual([10, 20, 30]);
+      expect(result.current.sortKey).toBe("price");
+    });
+
+    act(() => {
+      result.current.toggleDirection();
+    });
+
+    await waitFor(() => {
+      expect(result.current.items.map((item) => item.price)).toEqual([30, 20, 10]);
+    });
+  });
+
   it("returns sorted items based on sort state", async () => {
     const { result } = renderHook(() => {
       const sort = useSortState({
