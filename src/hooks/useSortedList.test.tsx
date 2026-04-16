@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "@jest/globals";
 
-import { useSortedList } from "./useSortedList";
+import { singleKeyAccessors, useSortedList } from "./useSortedList";
 import { useSortState } from "./useSortState";
 
 type Product = {
@@ -116,6 +116,20 @@ describe("useSortedList", () => {
     await waitFor(() => {
       expect(result.current.items.map((item) => item.price)).toEqual([10, 20, 30]);
       expect(result.current.isSorted).toBe(true);
+    });
+  });
+
+  it("supports singleKeyAccessors for minimal single-field setup", async () => {
+    const { result } = renderHook(() =>
+      useSortedList(products, {
+        accessors: singleKeyAccessors("price", (item: Product) => item.price),
+        initialKey: "price",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.items.map((item) => item.price)).toEqual([10, 20, 30]);
+      expect(result.current.sortKey).toBe("price");
     });
   });
 });
