@@ -1,0 +1,78 @@
+{
+  "name": "exsorted-react",
+  "version": "1.0.0",
+  "description": "React hooks for sorting with Exsorted and TypeScript-first inference",
+  "keywords": [
+    "custom-hook",
+    "exsorted",
+    "react",
+    "typescript"
+  ],
+  "homepage": "https://github.com/Ink01101011/exsorted-react#readme",
+  "bugs": {
+    "url": "https://github.com/Ink01101011/exsorted-react/issues"
+  },
+  "license": "MIT",
+  "author": "Ink01101011",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ink01101011/exsorted-react.git"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "lint": "pnpm dlx oxlint@latest .",
+    "lint:fix": "pnpm dlx oxlint@latest --fix .",
+    "format": "pnpm dlx oxfmt@latest --write .",
+    "format:check": "pnpm dlx oxfmt@latest --check .",
+    "typecheck": "tsc --noEmit",
+    "size": "node ./scripts/check-bundle-size.mjs",
+    "audit:cve": "pnpm audit --audit-level=high",
+    "check": "pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run build && pnpm run size",
+    "prepare": "husky",
+    "precommit:check": "pnpm run lint && pnpm run format:check && pnpm run typecheck",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "exsorted": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0 || ^19.0.0",
+    "husky": "^9.1.7",
+    "react": "^18.2.0 || ^19.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3"
+  },
+  "peerDependencies": {
+    "exsorted": "^1.1.0",
+    "react": "^18.2.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "exsorted": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

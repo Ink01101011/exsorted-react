@@ -1,0 +1,14 @@
+{
+  "$schema": "https://oxc.rs/schemas/oxlintrc.json",
+  "env": {
+    "browser": false,
+    "node": true,
+    "es2022": true
+  },
+  "plugins": ["typescript"],
+  "rules": {
+    "no-unused-vars": "error",
+    "no-const-assign": "error"
+  },
+  "ignorePatterns": ["dist/**", "node_modules/**"]
+}
