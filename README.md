@@ -1,38 +1,80 @@
 # exsorted-react
 
-Custom React hooks for sorting with TypeScript-first APIs.
+TypeScript-first React sorting hook powered by [exsorted](https://www.npmjs.com/package/exsorted).
 
-Supports React 18 and React 19.
+- React support: 18 and 19
+- Public API: useSortedList, singleKeyAccessors, and related public types
+- Exsorted resolution: uses peer version when available, otherwise falls back to bundled dependency
 
-Sorting is powered by exsorted.
-If a consumer project already provides exsorted, that version is used through peer resolution; otherwise the library fallback dependency is used.
-
-## Quality Tooling
-
-- Lint: `pnpm run lint`
-- Format check: `pnpm run format:check`
-- Type check: `pnpm run typecheck`
-- Build: `pnpm run build`
-- Bundle size check: `pnpm run size`
-- CVE audit: `pnpm run audit:cve`
-- Full local check: `pnpm run check`
-
-This project includes:
-
-- oxlint and oxfmt commands
-- husky pre-commit hook
-- GitHub Actions CI for lint, format, typecheck, build, bundle budget, and CVE audit
-
-## APIs
-
-- useSortState: manages sort key and direction with strong key inference.
-- useSortedList: returns a sorted copy from typed accessors and sort state.
-- defineSortAccessors: helper to preserve literal accessor keys for maximum inference.
-
-## Example
+## API Surface
 
 ```ts
-import { defineSortAccessors, useSortedList, useSortState } from "exsorted-react";
+import { singleKeyAccessors, useSortedList } from "exsorted-react";
+```
+
+## singleKeyAccessors
+
+Minimal helper for one-field sorting while keeping accessors required.
+
+```ts
+const sorted = useSortedList(products, {
+  accessors: singleKeyAccessors("price", (item: Product) => item.price),
+  initialKey: "price",
+});
+```
+
+## useSortedList
+
+```ts
+const result = useSortedList(items, options);
+```
+
+### Modes
+
+- Standalone mode: pass accessors with optional initialKey and initialDirection
+- Controlled mode: pass sort controller object
+- Read-only state mode: pass state object
+
+### Options
+
+- accessors (required): map of key to value accessor
+- comparator (optional): comparator used for sorting
+- comparators (optional): legacy alias of comparator
+- sorter (optional): custom compare-based exsorted sorter, default is mergeSort
+- initialKey and initialDirection (standalone mode only)
+- sort (controlled mode only)
+- state (read-only state mode only)
+
+### Sorter Compatibility
+
+sorter must match compare-based signature:
+
+```ts
+(arr, compareFn?) => arr;
+```
+
+Not supported because function interfaces differ:
+
+- exsorted/non-compare: countingSort, radixSort, bucketSort, pigeonholeSort
+- exsorted/standard: introSort
+
+### Return Value
+
+- items: visible items (sorted or original depending on mode/actions)
+- previousItems: previous visible snapshot
+- originalItems: input source reference
+- isSorting: transition pending state
+- isSorted: true when sorted view is active and not pending
+- sort, sortKey, direction: effective sort state
+- setSortKey, setDirection, toggleDirection, setSort, reset: sort controls
+- restoreOriginal, restoreSorted: view-mode controls
+
+## Examples
+
+### Standalone Mode
+
+```ts
+import { useSortedList } from "exsorted-react";
 import { quickSort } from "exsorted";
 
 type Product = {
@@ -42,26 +84,75 @@ type Product = {
   rating: number;
 };
 
-const accessors = defineSortAccessors<Product>({
-  name: (item) => item.name,
-  price: (item) => item.price,
-  rating: (item) => item.rating,
-});
-
-const sort = useSortState({
-  keys: ["name", "price", "rating"] as const,
+const sorted = useSortedList(products, {
+  accessors: {
+    name: (item: Product) => item.name,
+    price: (item: Product) => item.price,
+    rating: (item: Product) => item.rating,
+  },
+  sorter: quickSort,
   initialKey: "price",
 });
 
-const sortedProducts = useSortedList(products, {
-  state: sort.sort,
-  accessors,
-  sorter: quickSort,
-  useTransition: true,
-  useDeferred: true,
-});
-
-// sort.setSortKey only accepts: 'name' | 'price' | 'rating'
+sorted.setSortKey("name");
+sorted.toggleDirection();
 ```
 
-`sorter` is tree-shakable: import only the algorithm you need from `exsorted` and pass it to the hook.
+### Single-key Minimal Mode
+
+```ts
+import { singleKeyAccessors, useSortedList } from "exsorted-react";
+
+const sorted = useSortedList(products, {
+  accessors: singleKeyAccessors("price", (item: Product) => item.price),
+  initialKey: "price",
+});
+```
+
+### Controlled Mode
+
+```ts
+import { useState } from "react";
+import { useSortedList } from "exsorted-react";
+
+const [sort, setSort] = useState({ key: "name" as const, direction: "asc" as const });
+
+const sorted = useSortedList(products, {
+  accessors: {
+    name: (item: Product) => item.name,
+    price: (item: Product) => item.price,
+  },
+  sort: {
+    sort,
+    setSort,
+    reset: () => setSort({ key: "name", direction: "asc" }),
+  },
+});
+```
+
+### Read-only State Mode
+
+```ts
+const sorted = useSortedList(products, {
+  accessors: {
+    name: (item: Product) => item.name,
+    price: (item: Product) => item.price,
+  },
+  state: { key: "price", direction: "desc" },
+});
+```
+
+### Custom Comparator
+
+```ts
+const sorted = useSortedList(products, {
+  accessors: {
+    name: (item: Product) => item.name,
+    price: (item: Product) => item.price,
+  },
+  initialKey: "name",
+  comparator: (a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
+});
+```
+
+Tree-shaking note: import and pass only the sorter algorithm you need.
