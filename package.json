@@ -46,6 +46,8 @@
     "format": "pnpm dlx oxfmt@latest --write .",
     "format:check": "pnpm dlx oxfmt@latest --check .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "size": "node ./scripts/check-bundle-size.mjs",
     "audit:cve": "pnpm audit --audit-level=high",
     "check": "pnpm run lint && pnpm run format:check && pnpm run typecheck && pnpm run build && pnpm run size",
@@ -57,11 +59,16 @@
     "exsorted": "^1.1.0"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.2.0",
     "@types/react": "^18.0.0 || ^19.0.0",
+    "@types/react-dom": "^18.0.0 || ^19.0.0",
     "husky": "^9.1.7",
+    "jsdom": "^25.0.1",
     "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0",
     "tsup": "^8.3.5",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.5"
   },
   "peerDependencies": {
     "exsorted": "^1.1.0",

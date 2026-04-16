@@ -7,7 +7,7 @@
     "jsx": "react-jsx",
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "isolatedModules": true,
