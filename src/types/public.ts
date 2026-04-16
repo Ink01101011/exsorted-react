@@ -80,12 +80,6 @@ export type UseSortedListOptions<TItem, TKey extends PropertyKey> = {
    */
   accessors: SortAccessors<TItem, TKey>;
   /**
-   * Legacy alias for `comparator`.
-   *
-   * If both are provided, `comparator` takes precedence.
-   */
-  comparators?: CompareFn<TItem>;
-  /**
    * Custom comparator used for all sort keys.
    */
   comparator?: CompareFn<TItem>;

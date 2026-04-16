@@ -55,7 +55,6 @@ back to the first accessor key to avoid error-triggered re-render loops.
 
 - accessors (required): map of key to value accessor
 - comparator (optional): comparator used for sorting
-- comparators (optional): legacy alias of comparator
 - sorter (optional): custom compare-based exsorted sorter, default is mergeSort
 - initialKey and initialDirection (standalone mode only)
 - sort (controlled mode only)

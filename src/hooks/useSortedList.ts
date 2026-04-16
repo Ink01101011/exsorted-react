@@ -60,7 +60,7 @@ export function useSortedList<TItem, const TAccessors extends SortAccessorRecord
     accessors: TAccessors;
   },
 ): UseSortedListResult<TItem, SortKey<TAccessors>> {
-  const { accessors, comparators, comparator, sorter } = options;
+  const { accessors, comparator, sorter } = options;
   const [isPending, startTransition] = useTransition();
 
   const defaultKey = useMemo(() => resolveDefaultKey(accessors), [accessors]);
@@ -121,7 +121,7 @@ export function useSortedList<TItem, const TAccessors extends SortAccessorRecord
 
   const effectiveItems = deferredItems;
   const effectiveState = deferredState;
-  const effectiveComparator = comparator ?? comparators;
+  const effectiveComparator = comparator;
   const { accessor, resolvedKey } = resolveAccessorWithFallback(
     accessors,
     effectiveState.key,
