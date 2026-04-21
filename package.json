@@ -1,6 +1,6 @@
 {
   "name": "exsorted-react",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "TypeScript-first React custom hooks for list sorting with Exsorted (useSortedList, singleKeyAccessors)",
   "keywords": [
     "custom-hook",
