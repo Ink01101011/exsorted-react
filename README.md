@@ -2,9 +2,35 @@
 
 TypeScript-first React sorting hook powered by [exsorted](https://www.npmjs.com/package/exsorted).
 
+[![npm version](https://img.shields.io/npm/v/exsorted-react)](https://www.npmjs.com/package/exsorted-react)
+[![npm downloads](https://img.shields.io/npm/dm/exsorted-react)](https://www.npmjs.com/package/exsorted-react)
+[![license](https://img.shields.io/npm/l/exsorted-react)](LICENSE)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/exsorted-react)](https://bundlephobia.com/package/exsorted-react)
+
 - React support: 18 and 19
 - Public API: useSortedList, singleKeyAccessors, and related public types
 - Exsorted resolution: uses peer version when available, otherwise falls back to bundled dependency
+
+## Why exsorted-react
+
+exsorted-react provides TypeScript-first React custom hooks for sorting lists with deterministic,
+non-mutating behavior. It is built for teams that want reusable sorting primitives instead of
+rewriting sort state and comparator logic per component.
+
+## Features
+
+- React sorting hook API for list sorting in UI state (`useSortedList`)
+- Helper for single-field sorting with required accessor safety (`singleKeyAccessors`)
+- Supports standalone, controlled, and read-only state modes
+- Works with compare-based Exsorted algorithms and custom comparators
+- Typed return controls for sort key, direction, reset, and view restore
+
+## Use Cases
+
+- Build sortable tables and product lists in React apps
+- Share sorting behavior across design systems and component libraries
+- Keep sorting logic strongly typed in TypeScript codebases
+- Integrate Exsorted algorithms while preserving hook ergonomics
 
 ## API Surface
 

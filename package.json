@@ -1,12 +1,18 @@
 {
   "name": "exsorted-react",
   "version": "1.0.3",
-  "description": "React hooks for sorting with Exsorted and TypeScript-first inference",
+  "description": "TypeScript-first React custom hooks for list sorting with Exsorted (useSortedList, singleKeyAccessors)",
   "keywords": [
     "custom-hook",
     "exsorted",
+    "list-sorting",
     "react",
-    "typescript"
+    "react-hooks",
+    "react-sorting",
+    "sorting-hook",
+    "typescript",
+    "use-sort",
+    "usesortedlist"
   ],
   "homepage": "https://github.com/Ink01101011/exsorted-react#readme",
   "bugs": {
