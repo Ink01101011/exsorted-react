@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useSortState } from "./useSortState";
 import {
   areArraysShallowEqual,
@@ -116,11 +116,15 @@ export function useSortedList<TItem, const TAccessors extends SortAccessorRecord
     [activeKey, activeDirection],
   );
 
+  // A new array with the same elements (e.g. `data.filter(...)`, `list ?? []`)
+  // keeps the previous reference, so it is not treated as a new list.
+  const stableItems = useShallowStableArray(items);
+
   // Sorting runs on deferred inputs: while React works on a newer list or sort,
   // the last completed result stays on screen.
-  const deferredItems = useDeferredValue(items);
+  const deferredItems = useDeferredValue(stableItems);
   const deferredSort = useDeferredValue(stableSort);
-  const isSorting = deferredItems !== items || deferredSort !== stableSort;
+  const isSorting = deferredItems !== stableItems || deferredSort !== stableSort;
 
   const { accessor } = resolveAccessorWithFallback(accessors, deferredSort.key, defaultKey);
 
@@ -129,21 +133,30 @@ export function useSortedList<TItem, const TAccessors extends SortAccessorRecord
     [accessor, comparator, deferredItems, deferredSort, sorter],
   );
 
-  // Keep the last two distinct results in state. Updating state during render is
-  // React's supported "adjust state when inputs change" pattern; a shallow-equal
-  // result reuses the previous array so references stay stable (e.g. with inline
-  // accessors, which re-run the sort but produce the same order).
-  const [snapshot, setSnapshot] = useState(() => ({ current: computed, previous: computed }));
-  let sorted = snapshot.current;
-  let previousItems = snapshot.previous;
-  if (!areArraysShallowEqual(snapshot.current, computed)) {
-    setSnapshot({ current: computed, previous: snapshot.current });
-    previousItems = snapshot.current;
-    sorted = computed;
-  }
+  // Results are tracked in refs written only after commit, never via state:
+  // a state update here would re-render the caller, which may rebuild `items`
+  // as new objects and loop forever. A shallow-equal result reuses the last
+  // committed array so `items` keeps its reference (e.g. inline accessors).
+  const committedRef = useRef<{ current: TItem[]; previous: TItem[] }>({
+    current: computed,
+    previous: computed,
+  });
+  const committed = committedRef.current;
+  const isSameResult = areArraysShallowEqual(committed.current, computed);
+  const sorted = isSameResult ? committed.current : computed;
+  const previousItems = isSameResult ? committed.previous : committed.current;
+
+  useEffect(() => {
+    if (committedRef.current.current !== sorted) {
+      committedRef.current = { current: sorted, previous: committedRef.current.current };
+    }
+  }, [sorted]);
 
   const [isOriginalMode, setIsOriginalMode] = useState(false);
-  const originalItems = useMemo(() => [...items], [items]);
+  const originalItems = useMemo(
+    () => (isOriginalMode ? [...stableItems] : sorted),
+    [isOriginalMode, stableItems, sorted],
+  );
 
   const restoreOriginal = useCallback(() => {
     setIsOriginalMode(true);
@@ -179,3 +192,19 @@ export function useSortedList<TItem, const TAccessors extends SortAccessorRecord
 }
 
 export type { UseSortedListOptions };
+
+/**
+ * Returns the previous array reference while the input has the same elements
+ * (Object.is per index), so identity-based hooks see no change. The ref is
+ * only written after commit.
+ */
+function useShallowStableArray<TItem>(value: readonly TItem[]): readonly TItem[] {
+  const ref = useRef(value);
+  const stable = areArraysShallowEqual(ref.current, value) ? ref.current : value;
+
+  useEffect(() => {
+    ref.current = stable;
+  }, [stable]);
+
+  return stable;
+}

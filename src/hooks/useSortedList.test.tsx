@@ -320,3 +320,43 @@ describe("useSortedList regressions (#3)", () => {
     });
   });
 });
+
+describe("useSortedList unstable inputs (#3 review)", () => {
+  it("does not loop when items are rebuilt as new objects on every render", async () => {
+    const source: Row[] = [
+      { id: 1, score: 2 },
+      { id: 2, score: 1 },
+    ];
+    const { result, rerender } = renderHook(() =>
+      useSortedList(
+        source.map((row) => ({ ...row })),
+        { accessors: scoreAccessors },
+      ),
+    );
+
+    rerender();
+    rerender();
+
+    await waitFor(() => {
+      expect(result.current.items.map((item) => item.id)).toEqual([2, 1]);
+      expect(result.current.isSorting).toBe(false);
+    });
+  });
+
+  it("does not report sorting when items is a new array with the same elements", async () => {
+    const flags: boolean[] = [];
+    const { rerender } = renderHook(() => {
+      const sorted = useSortedList(
+        products.filter(() => true),
+        { accessors: { price: (item: Product) => item.price } },
+      );
+      flags.push(sorted.isSorting);
+      return sorted;
+    });
+
+    await act(async () => rerender());
+    await act(async () => rerender());
+
+    expect(flags.every((flag) => !flag)).toBe(true);
+  });
+});
