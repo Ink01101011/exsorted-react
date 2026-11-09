@@ -12,4 +12,4 @@ This project includes:
 
 - oxlint and oxfmt commands
 - husky pre-commit hook
-- GitHub Actions CI for lint, format, typecheck, build, bundle budget, and CVE audit
+- GitHub Actions CI for lint, format, typecheck, build, bundle budget, CVE audit, and tests on Node 18–24 (ubuntu) plus Node 24 on macOS and Windows

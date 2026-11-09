@@ -16,17 +16,30 @@ const collator = new Intl.Collator(undefined, {
   sensitivity: "base",
 });
 
-const comparePrimitiveValues = (left: SortPrimitive, right: SortPrimitive): number => {
+/**
+ * True for values that cannot be ordered: null, undefined, NaN and invalid dates.
+ * They are always placed after orderable values (before them when descending).
+ * Evaluated once per item while decorating, not per comparison.
+ */
+const isUnorderable = (value: SortPrimitive): boolean =>
+  value == null ||
+  (typeof value === "number" && Number.isNaN(value)) ||
+  (value instanceof Date && Number.isNaN(value.getTime()));
+
+/**
+ * Compares two orderable values. Hot path: number and string checks come first.
+ */
+const compareOrderableValues = (left: SortPrimitive, right: SortPrimitive): number => {
   if (left === right) {
     return 0;
   }
 
-  if (left == null) {
-    return 1;
+  if (typeof left === "number" && typeof right === "number") {
+    return left - right;
   }
 
-  if (right == null) {
-    return -1;
+  if (typeof left === "string" && typeof right === "string") {
+    return collator.compare(left, right);
   }
 
   if (left instanceof Date && right instanceof Date) {
@@ -35,10 +48,6 @@ const comparePrimitiveValues = (left: SortPrimitive, right: SortPrimitive): numb
 
   if (typeof left === "boolean" && typeof right === "boolean") {
     return Number(left) - Number(right);
-  }
-
-  if (typeof left === "number" && typeof right === "number") {
-    return left - right;
   }
 
   return collator.compare(String(left), String(right));
@@ -62,19 +71,30 @@ export const singleKeyAccessors = <TItem, const TKey extends string>(
 export const toggleSortDirection = (direction: SortDirection): SortDirection =>
   direction === "asc" ? "desc" : "asc";
 
-const buildComparator = <TItem>(
-  accessor: (item: TItem) => SortPrimitive,
-  state: SortState,
-  customComparator?: CompareFn<TItem>,
-): CompareFn<TItem> => {
-  const compareBase: CompareFn<TItem> =
-    customComparator ?? ((left, right) => comparePrimitiveValues(accessor(left), accessor(right)));
+type SortEntry<TItem> = { item: TItem; value: SortPrimitive; unorderable: boolean };
 
-  return (left, right) => withDirection(compareBase(left, right), state.direction);
+const compareEntries = <TItem>(left: SortEntry<TItem>, right: SortEntry<TItem>): number => {
+  if (left.unorderable || right.unorderable) {
+    return Number(left.unorderable) - Number(right.unorderable);
+  }
+
+  return compareOrderableValues(left.value, right.value);
 };
+
+const toEntry = <TItem>(item: TItem, value: SortPrimitive): SortEntry<TItem> => ({
+  item,
+  value,
+  unorderable: isUnorderable(value),
+});
 
 /**
  * Sorts items using the provided compare-based sorter.
+ *
+ * With the default sorter and no custom comparator, accessor values are
+ * computed once per item up front (decorate-sort-undecorate), so the accessor
+ * runs n times instead of about 2·n·log(n) times. A user-supplied `sorter`
+ * always receives the original items, keeping its `ExsortedSorter<TItem>`
+ * contract unchanged.
  */
 export const sortList = <TItem>(
   items: readonly TItem[],
@@ -87,9 +107,30 @@ export const sortList = <TItem>(
     return [...items];
   }
 
-  const selectedSorter = sorter ?? mergeSort;
-  const directionalComparator = buildComparator(accessor, state, comparator);
-  return selectedSorter([...items], directionalComparator);
+  const { direction } = state;
+
+  if (comparator) {
+    const selectedSorter = sorter ?? mergeSort;
+    return selectedSorter([...items], (left, right) =>
+      withDirection(comparator(left, right), direction),
+    );
+  }
+
+  if (sorter) {
+    return sorter([...items], (left, right) =>
+      withDirection(
+        compareEntries(toEntry(left, accessor(left)), toEntry(right, accessor(right))),
+        direction,
+      ),
+    );
+  }
+
+  const entries = items.map((item) => toEntry(item, accessor(item)));
+  const sortedEntries = mergeSort(entries, (left, right) =>
+    withDirection(compareEntries(left, right), direction),
+  );
+
+  return sortedEntries.map((entry) => entry.item);
 };
 
 /**
@@ -144,9 +185,13 @@ export const resolveAccessorWithFallback = <TItem, TKey extends string>(
   key: TKey,
   fallbackKey: TKey,
 ): { accessor: (item: TItem) => SortPrimitive; resolvedKey: TKey } => {
-  const directAccessor = accessors[key];
-  if (directAccessor !== undefined) {
-    return { accessor: directAccessor, resolvedKey: key };
+  // Own-property check: keys such as "valueOf" or "__proto__" (e.g. taken from a
+  // URL query) must not resolve to Object.prototype members.
+  if (Object.prototype.hasOwnProperty.call(accessors, key)) {
+    const directAccessor = accessors[key];
+    if (typeof directAccessor === "function") {
+      return { accessor: directAccessor, resolvedKey: key };
+    }
   }
 
   return { accessor: accessors[fallbackKey], resolvedKey: fallbackKey };
@@ -189,20 +234,6 @@ export const areArraysShallowEqual = <TItem>(left: readonly TItem[], right: read
  */
 export const resolveVisibleItems = <TItem>(params: {
   isOriginalMode: boolean;
-  sourceItems: readonly TItem[];
-  isPending: boolean;
-  previousItems: TItem[];
+  originalItems: TItem[];
   sortedItems: TItem[];
-}): TItem[] => {
-  const { isOriginalMode, sourceItems, isPending, previousItems, sortedItems } = params;
-
-  if (isOriginalMode) {
-    return [...sourceItems];
-  }
-
-  if (isPending) {
-    return previousItems;
-  }
-
-  return sortedItems;
-};
+}): TItem[] => (params.isOriginalMode ? params.originalItems : params.sortedItems);
