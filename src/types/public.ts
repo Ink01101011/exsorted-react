@@ -136,7 +136,7 @@ export interface UseSortedListResult<TItem, TKey extends PropertyKey = string> {
    */
   items: TItem[];
   /**
-   * Last visible list snapshot prior to the most recent sorted update.
+   * The sorted result shown before the latest one.
    */
   previousItems: TItem[];
   /**
@@ -144,7 +144,8 @@ export interface UseSortedListResult<TItem, TKey extends PropertyKey = string> {
    */
   originalItems: readonly TItem[];
   /**
-   * True while a deferred transition is applying a new sorted result.
+   * True while a newer list or sort state is being sorted in the background.
+   * `items` keeps showing the last completed result until then.
    */
   isSorting: boolean;
   /**

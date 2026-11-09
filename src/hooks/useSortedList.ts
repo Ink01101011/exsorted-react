@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { useSortState } from "./useSortState";
 import {
   areArraysShallowEqual,
@@ -61,7 +53,6 @@ export function useSortedList<TItem, const TAccessors extends SortAccessorRecord
   },
 ): UseSortedListResult<TItem, SortKey<TAccessors>> {
   const { accessors, comparator, sorter } = options;
-  const [isPending, startTransition] = useTransition();
 
   const defaultKey = useMemo(() => resolveDefaultKey(accessors), [accessors]);
   const externalSortController = resolveExternalController(options);
@@ -116,28 +107,43 @@ export function useSortedList<TItem, const TAccessors extends SortAccessorRecord
     activeSortController?.reset();
   }, [activeSortController]);
 
+  // Key/direction-stable sort object, so an inline `state={{ key, direction }}`
+  // does not look like a new sort on every render.
+  const activeKey = activeSort.key;
+  const activeDirection = activeSort.direction;
+  const stableSort = useMemo<SortState<SortKey<TAccessors>>>(
+    () => ({ key: activeKey, direction: activeDirection }),
+    [activeKey, activeDirection],
+  );
+
+  // Sorting runs on deferred inputs: while React works on a newer list or sort,
+  // the last completed result stays on screen.
   const deferredItems = useDeferredValue(items);
-  const deferredState = useDeferredValue(activeSort);
+  const deferredSort = useDeferredValue(stableSort);
+  const isSorting = deferredItems !== items || deferredSort !== stableSort;
 
-  const effectiveItems = deferredItems;
-  const effectiveState = deferredState;
-  const effectiveComparator = comparator;
-  const { accessor, resolvedKey } = resolveAccessorWithFallback(
-    accessors,
-    effectiveState.key,
-    defaultKey,
-  );
-  const effectiveSort =
-    resolvedKey === effectiveState.key ? effectiveState : { ...effectiveState, key: resolvedKey };
+  const { accessor } = resolveAccessorWithFallback(accessors, deferredSort.key, defaultKey);
 
-  const nextSorted = useMemo(
-    () => sortList(effectiveItems, effectiveSort, accessor, effectiveComparator, sorter),
-    [accessor, effectiveComparator, effectiveItems, effectiveSort, sorter],
+  const computed = useMemo(
+    () => sortList(deferredItems, deferredSort, accessor, comparator, sorter),
+    [accessor, comparator, deferredItems, deferredSort, sorter],
   );
 
-  const [sorted, setSorted] = useState<TItem[]>(nextSorted);
+  // Keep the last two distinct results in state. Updating state during render is
+  // React's supported "adjust state when inputs change" pattern; a shallow-equal
+  // result reuses the previous array so references stay stable (e.g. with inline
+  // accessors, which re-run the sort but produce the same order).
+  const [snapshot, setSnapshot] = useState(() => ({ current: computed, previous: computed }));
+  let sorted = snapshot.current;
+  let previousItems = snapshot.previous;
+  if (!areArraysShallowEqual(snapshot.current, computed)) {
+    setSnapshot({ current: computed, previous: snapshot.current });
+    previousItems = snapshot.current;
+    sorted = computed;
+  }
+
   const [isOriginalMode, setIsOriginalMode] = useState(false);
-  const previousItemsRef = useRef<TItem[]>(nextSorted);
+  const originalItems = useMemo(() => [...items], [items]);
 
   const restoreOriginal = useCallback(() => {
     setIsOriginalMode(true);
@@ -147,37 +153,18 @@ export function useSortedList<TItem, const TAccessors extends SortAccessorRecord
     setIsOriginalMode(false);
   }, []);
 
-  useEffect(() => {
-    if (areArraysShallowEqual(sorted, nextSorted)) {
-      return;
-    }
-
-    startTransition(() => {
-      setSorted((current) => {
-        if (areArraysShallowEqual(current, nextSorted)) {
-          return current;
-        }
-
-        previousItemsRef.current = current;
-        return nextSorted;
-      });
-    });
-  }, [nextSorted, sorted, startTransition]);
-
   const visibleItems = resolveVisibleItems({
     isOriginalMode,
-    sourceItems: items,
-    isPending,
-    previousItems: previousItemsRef.current,
+    originalItems,
     sortedItems: sorted,
   });
 
   return {
     items: visibleItems,
-    previousItems: previousItemsRef.current,
+    previousItems,
     originalItems: items,
-    isSorting: isPending,
-    isSorted: !isPending && !isOriginalMode,
+    isSorting,
+    isSorted: !isSorting && !isOriginalMode,
     sort: activeSort,
     sortKey: activeSort.key,
     direction: activeSort.direction,

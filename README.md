@@ -69,7 +69,17 @@ import { useSortedList } from "exsorted-react";
 `useSortedList` callable in Server Components.
 
 If external read-only state provides a key that is not present in `accessors`, the hook safely falls
-back to the first accessor key to avoid error-triggered re-render loops.
+back to the first accessor key to avoid error-triggered re-render loops. Only own accessor keys are
+used, so keys such as `valueOf` or `__proto__` (for example from a `?sort=` query) also fall back.
+
+### Ordering and Performance
+
+- `null`, `undefined`, `NaN` and invalid `Date` values sort after all other values (before them
+  when descending).
+- Each accessor runs once per item per sort when the default sorter and comparator are used.
+- Define `accessors` outside the component or wrap them in `useMemo`. Inline accessor functions
+  are new on every render, so the list is re-sorted on every render (the returned `items` array
+  keeps its reference when the order does not change).
 
 ### Modes
 
@@ -102,9 +112,10 @@ Not supported because function interfaces differ:
 ### Return Value
 
 - items: visible items (sorted or original depending on mode/actions)
-- previousItems: previous visible snapshot
+- previousItems: the sorted result shown before the latest one
 - originalItems: input source reference
-- isSorting: transition pending state
+- isSorting: true while a newer list or sort state is being sorted in the background; `items`
+  keeps showing the last completed result until then
 - isSorted: true when sorted view is active and not pending
 - sort, sortKey, direction: effective sort state
 - setSortKey, setDirection, toggleDirection, setSort, reset: sort controls
