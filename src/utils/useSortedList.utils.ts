@@ -216,6 +216,10 @@ export const resolveExternalState = <TItem, TAccessors extends SortAccessorRecor
  * Fast shallow equality check for array identity/content references.
  */
 export const areArraysShallowEqual = <TItem>(left: readonly TItem[], right: readonly TItem[]) => {
+  if (left === right) {
+    return true;
+  }
+
   if (left.length !== right.length) {
     return false;
   }

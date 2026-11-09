@@ -80,6 +80,11 @@ used, so keys such as `valueOf` or `__proto__` (for example from a `?sort=` quer
 - Define `accessors` outside the component or wrap them in `useMemo`. Inline accessor functions
   are new on every render, so the list is re-sorted on every render (the returned `items` array
   keeps its reference when the order does not change).
+- A new `items` array with the same elements (for example `data.filter(...)` or `list ?? []`) is
+  treated as unchanged. Rebuilding the item objects on every render (`data.map((d) => ({ ...d }))`)
+  works, but re-sorts on every render; memoize them for large lists.
+- `sortKey` and `sort.key` return the key you provided, even when it is not an accessor key and the
+  list is sorted by the fallback key. Validate keys taken from a URL before highlighting a column.
 
 ### Modes
 
